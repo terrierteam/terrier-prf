@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
  * 
  * @author Nicola Tonellotto and Craig Macdonald
  */
+@ProcessPhaseRequisites({ManagerRequisite.MQT, ManagerRequisite.RESULTSET})
 public class RM3 extends RM1
 {
 
