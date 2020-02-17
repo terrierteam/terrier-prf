@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terrier.matching.BaseMatching;
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.MatchingQueryTerms.MatchingTerm;
 import org.terrier.matching.matchops.SingleTermOp;
@@ -19,9 +20,8 @@ import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
  * 
  * @author Nicola Tonellotto and Craig Macdonald
  */
-@ProcessPhaseRequisites({ManagerRequisite.MQT, ManagerRequisite.RESULTSET})
-public class RM3 extends RM1
-{
+@ProcessPhaseRequisites({ ManagerRequisite.MQT, ManagerRequisite.RESULTSET })
+public class RM3 extends RM1 {
 
     protected static Logger logger = LoggerFactory.getLogger(RM3.class);
 
@@ -29,73 +29,74 @@ public class RM3 extends RM1
     protected Int2FloatMap originalQueryTermScores;
     protected float lambda;
 
-    public RM3(final int fbTerms, final int fbDocs, final Index index) 
-    {
+    public RM3(final int fbTerms, final int fbDocs, final Index index) {
         this(fbTerms, fbDocs, index, DEFAULT_LAMBDA);
     }
 
-    public RM3(final int fbTerms, final int fbDocs, final Index index, final float lambda) 
-    {
+    public RM3(final int fbTerms, final int fbDocs, final Index index, final float lambda) {
         super(fbTerms, fbDocs, index);
-        
+
         this.originalQueryTermScores = new Int2FloatOpenHashMap();
         this.lambda = lambda;
     }
 
-    public RM3()
-    {
+    public RM3() {
         super();
         this.originalQueryTermScores = new Int2FloatOpenHashMap();
         this.lambda = DEFAULT_LAMBDA;
     }
 
-    public boolean expandQuery(MatchingQueryTerms mqt, Request rq) throws IOException
-	{
+    public boolean expandQuery(MatchingQueryTerms mqt, Request rq) throws IOException {
         this.index = rq.getIndex();
         computeOriginalTermScore(mqt);
         if (rq.hasControl("rm3.lambda"))
-            this.lambda = Float.parseFloat( rq.getControl("rm3.lambda") ) ;
-		List<ExpansionTerm> expansions = this.expand(rq);
+            this.lambda = Float.parseFloat(rq.getControl("rm3.lambda"));
+        List<ExpansionTerm> expansions = this.expand(rq);
         mqt.clear();
-        for (ExpansionTerm et : expansions)
-		{
-			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setWeight(et.getWeight()).build());
+        for (ExpansionTerm et : expansions) {
+            mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setTag(BaseMatching.BASE_MATCHING_TAG)
+                    .setWeight(et.getWeight()).build());
         }
         logger.info("Reformulated query: " + mqt.toString());
-		return true;
+        return true;
     }
-    
 
-    protected void computeOriginalTermScore(final MatchingQueryTerms mqt) 
-    {
-        final float queryLength = (float) mqt.stream().map(mt -> mt.getValue().getWeight()).mapToDouble(Double::doubleValue).sum();
+    protected void computeOriginalTermScore(final MatchingQueryTerms mqt) {
+        final float queryLength = (float) mqt.stream().map(mt -> mt.getValue().getWeight())
+                .mapToDouble(Double::doubleValue).sum();
         for (MatchingTerm mt : mqt) {
 
             int termid = super.index.getLexicon().getLexiconEntry(mt.getKey().toString()).getTermId();
             if (termid == -1)
                 continue;
-    		float termCount = (float) mt.getValue().getWeight();
-    		originalQueryTermScores.put(termid, termCount / queryLength);
-    	}
-	}
+            float termCount = (float) mt.getValue().getWeight();
+            originalQueryTermScores.put(termid, termCount / queryLength);
+        }
+    }
 
     @Override
-	protected void computeFeedbackTermScores()
-    {
+    protected void computeFeedbackTermScores() {
         super.computeFeedbackTermScores();
-        
+
         for (int termid : feedbackTermScores.keySet()) {
             if (originalQueryTermScores.containsKey(termid)) {
-            	float weight = lambda * originalQueryTermScores.get(termid) + (1 - lambda) * feedbackTermScores.get(termid);
-            	feedbackTermScores.put(termid, weight);
+                float weight = lambda * originalQueryTermScores.get(termid)
+                        + (1 - lambda) * feedbackTermScores.get(termid);
+                feedbackTermScores.put(termid, weight);
             }
         }
-        
+
         for (int termid : originalQueryTermScores.keySet()) {
             if (!feedbackTermScores.containsKey(termid)) {
-            	float weight = lambda * originalQueryTermScores.get(termid);
-            	feedbackTermScores.put(termid, weight);
+                float weight = lambda * originalQueryTermScores.get(termid);
+                feedbackTermScores.put(termid, weight);
             }
         }
+    }
+
+    @Override
+    public List<ExpansionTerm> expand(Request srq) throws IOException {
+        this.originalQueryTermScores.clear();
+        return super.expand(srq);
     }
 }

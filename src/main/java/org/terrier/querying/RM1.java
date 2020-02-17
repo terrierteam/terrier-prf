@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terrier.matching.BaseMatching;
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.ResultSet;
 import org.terrier.matching.matchops.SingleTermOp;
@@ -69,10 +70,10 @@ public class RM1 implements MQTRewritingProcess
 	 */
 	public class FeedbackDocument 
 	{
-		protected final int MIN_DF = Integer.parseInt(System.getProperty("prf.mindf", "2"));
+		protected final int MIN_DF = Integer.parseInt(ApplicationSetup.getProperty("prf.mindf", "2"));
 		
 		// if a term appears in more than 10% of documents, we ignore it
-		protected final double MAX_DOC_PERCENTAGE = Float.parseFloat(System.getProperty("prf.maxdp", "0.1"));
+		protected final double MAX_DOC_PERCENTAGE = Float.parseFloat(ApplicationSetup.getProperty("prf.maxdp", "0.1"));
 		
 		// termid -> term frequency in document map
 		protected Int2IntMap terms;
@@ -151,6 +152,9 @@ public class RM1 implements MQTRewritingProcess
 	public void process(Manager manager, Request q) {
 		try{
 			this.expandQuery(q.getMatchingQueryTerms(), q);
+
+			//THIS ASSUMES THAT QueryExpansion directly follows Matching
+			((LocalManager)manager).runNamedProcess(q.getControl("previousprocess"), q);
 		}catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
@@ -164,7 +168,10 @@ public class RM1 implements MQTRewritingProcess
 		mqt.clear();
 		for (ExpansionTerm et : expansions)
 		{
-			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setWeight(et.getWeight()).build());
+			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText()))
+				.setWeight(et.getWeight())
+				.setTag(BaseMatching.BASE_MATCHING_TAG)
+				.build());
 		}
 		logger.info("Reformulated query: " + mqt.toString());
 		return true;
@@ -173,7 +180,7 @@ public class RM1 implements MQTRewritingProcess
 	/**
 	 * This method computes a list of expansion terms from a given search request from Terrier
 	 * 
-	 * @param srq the processed search request from Terrier containing the top documets' docids & scores
+	 * @param srq the processed search request from Terrier containing the top documents' docids and scores
 	 * 
 	 * @return a list of expansion terms
 	 * 
