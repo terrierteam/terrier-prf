@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.ResultSet;
+import org.terrier.matching.matchops.SingleTermOp;
+import org.terrier.querying.parser.Query.QTPBuilder;
 import org.terrier.structures.Index;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.postings.IterablePosting;
