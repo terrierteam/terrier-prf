@@ -7,10 +7,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.terrier.matching.MatchingQueryTerms;
 import org.terrier.matching.ResultSet;
-import org.terrier.matching.matchops.SingleTermOp;
-import org.terrier.querying.parser.Query.QTPBuilder;
 import org.terrier.structures.Index;
 import org.terrier.structures.LexiconEntry;
 import org.terrier.structures.postings.IterablePosting;
@@ -36,6 +36,8 @@ import lombok.Setter;
 @ProcessPhaseRequisites({ManagerRequisite.MQT, ManagerRequisite.RESULTSET})
 public class RM1 implements MQTRewritingProcess
 {
+
+	protected static Logger logger = LoggerFactory.getLogger(RM1.class);
 
 	/**
 	 * This class represents a simple expansion term struct.
@@ -162,6 +164,7 @@ public class RM1 implements MQTRewritingProcess
 		{
 			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setWeight(et.getWeight()).build());
 		}
+		logger.info("Reformulated query: " + mqt.toString());∏
 		return true;
 	}
 	
