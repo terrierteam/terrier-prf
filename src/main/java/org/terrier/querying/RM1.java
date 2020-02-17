@@ -166,7 +166,7 @@ public class RM1 implements MQTRewritingProcess
 		{
 			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setWeight(et.getWeight()).build());
 		}
-		logger.info("Reformulated query: " + mqt.toString());∏
+		logger.info("Reformulated query: " + mqt.toString());
 		return true;
 	}
 	
