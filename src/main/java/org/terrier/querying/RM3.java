@@ -14,9 +14,10 @@ import org.terrier.structures.Index;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 
 /**
- * RM3 preliminary implementation
+ * RM3 implementation. This has been closely compared to the Anserini implementation using a common index.
  * 
  * @author Nicola Tonellotto and Craig Macdonald
  */
@@ -53,11 +54,14 @@ public class RM3 extends RM1 {
             this.lambda = Float.parseFloat(rq.getControl("rm3.lambda"));
         List<ExpansionTerm> expansions = this.expand(rq);
         mqt.clear();
+        StringBuilder sQuery = new StringBuilder();
         for (ExpansionTerm et : expansions) {
             mqt.add(QTPBuilder.of(new SingleTermOp(et.getText())).setTag(BaseMatching.BASE_MATCHING_TAG)
                     .setWeight(et.getWeight()).build());
+            sQuery.append(et.getText() + "^" + et.getWeight() + " ");
         }
-        logger.info("Reformulated query: " + mqt.toString());
+        logger.info("Reformulated query @ lambda="+this.lambda+": " + sQuery.toString());
+        //logger.info("Reformulated query: " + mqt.toString());
         return true;
     }
 
@@ -78,15 +82,20 @@ public class RM3 extends RM1 {
     @Override
     protected void computeFeedbackTermScores() {
         super.computeFeedbackTermScores();
+        super.clipTerms();
+        super.normalizeFeedbackTermScores();
 
         for (int termid : feedbackTermScores.keySet()) {
-            //System.err.println("termid " + termid + " term " + super.index.getLexicon().getLexiconEntry(termid).getKey());
+            //System.err.println("termid " + termid + " term " + super.index.getLexicon().getLexiconEntry(termid).getKey() +" " + feedbackTermScores.get(termid));
             if (originalQueryTermScores.containsKey(termid)) {
-                //System.err.println("not new: old weight = " +  originalQueryTermScores.get(termid) + " fbweight="  + feedbackTermScores.get(termid));
+                //System.err.println("termid " + termid + " term " + super.index.getLexicon().getLexiconEntry(termid).getKey() +" " +"not new: old weight = " +  originalQueryTermScores.get(termid) + " fbweight="  + feedbackTermScores.get(termid));
 
                 float weight = lambda * originalQueryTermScores.get(termid)
                         + (1 - lambda) * feedbackTermScores.get(termid);
                 feedbackTermScores.put(termid, weight);
+            } else {
+                feedbackTermScores.put(termid, (1 - lambda) * feedbackTermScores.get(termid));
+                //System.err.println("termid " + termid + " term " + super.index.getLexicon().getLexiconEntry(termid).getKey() +" " + feedbackTermScores.get(termid));
             }
         }
 
@@ -100,6 +109,18 @@ public class RM3 extends RM1 {
 
     @Override
     public List<ExpansionTerm> expand(Request srq) throws IOException {
-        return super.expand(srq);
+        //return super.expand(srq);
+
+		this.topLexicon.clear();
+		this.topDocs.clear();
+		this.feedbackTermScores.clear();
+
+		retrieveTopDocuments(srq.getResultSet());	
+		computeFeedbackTermScores();
+		
+		List<ExpansionTerm> rtr = new ObjectArrayList<>();
+		for (int termid: feedbackTermScores.keySet())
+			rtr.add(new ExpansionTerm(termid, index.getLexicon().getLexiconEntry(termid).getKey(), feedbackTermScores.get(termid)));
+		return rtr;
     }
 }
