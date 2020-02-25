@@ -91,13 +91,14 @@ public class RM1 implements MQTRewritingProcess
 			final int MAX_DOC_FREQ = (int) (MAX_DOC_PERCENTAGE * index.getCollectionStatistics().getNumberOfDocuments());	
 			final IterablePosting dp = index.getDirectIndex().getPostings(index.getDocumentIndex().getDocumentEntry(docid));
 			while (dp.next() != IterablePosting.EOL) {
+				this.length = dp.getDocumentLength(); //this supports the terrier-lucene better.
 				LexiconEntry le = index.getLexicon().getLexiconEntry(dp.getId()).getValue();
 				if (le.getDocumentFrequency() >= MIN_DF && le.getDocumentFrequency() < MAX_DOC_FREQ)
 					this.terms.put(dp.getId(), dp.getFrequency());
 			}
 			dp.close();
 			
-			this.length = index.getDocumentIndex().getDocumentLength(docid);
+			//this.length = index.getDocumentIndex().getDocumentLength(docid);
 
 		}
 		
