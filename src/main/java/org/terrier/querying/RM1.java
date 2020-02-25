@@ -99,6 +99,7 @@ public class RM1 implements MQTRewritingProcess
 			dp.close();
 			
 			//this.length = index.getDocumentIndex().getDocumentLength(docid);
+			assert this.length > 0;
 
 		}
 		
@@ -167,14 +168,17 @@ public class RM1 implements MQTRewritingProcess
 		this.index = rq.getIndex();
 		List<ExpansionTerm> expansions = this.expand(rq);
 		mqt.clear();
+		StringBuilder sQuery = new StringBuilder();
 		for (ExpansionTerm et : expansions)
 		{
 			mqt.add(QTPBuilder.of(new SingleTermOp(et.getText()))
 				.setWeight(et.getWeight())
 				.setTag(BaseMatching.BASE_MATCHING_TAG)
 				.build());
+			sQuery.append(et.getText() + "^" + et.getWeight() + " ");
 		}
-		logger.info("Reformulated query: " + mqt.toString());
+		logger.info("Reformulated query: " + sQuery.toString());
+		//logger.info("Reformulated query: " + mqt.toString());
 		return true;
 	}
 	
