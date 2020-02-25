@@ -62,6 +62,7 @@ public class RM3 extends RM1 {
     }
 
     protected void computeOriginalTermScore(final MatchingQueryTerms mqt) {
+        this.originalQueryTermScores.clear();
         final float queryLength = (float) mqt.stream().map(mt -> mt.getValue().getWeight())
                 .mapToDouble(Double::doubleValue).sum();
         for (MatchingTerm mt : mqt) {
@@ -79,7 +80,10 @@ public class RM3 extends RM1 {
         super.computeFeedbackTermScores();
 
         for (int termid : feedbackTermScores.keySet()) {
+            //System.err.println("termid " + termid + " term " + super.index.getLexicon().getLexiconEntry(termid).getKey());
             if (originalQueryTermScores.containsKey(termid)) {
+                //System.err.println("not new: old weight = " +  originalQueryTermScores.get(termid) + " fbweight="  + feedbackTermScores.get(termid));
+
                 float weight = lambda * originalQueryTermScores.get(termid)
                         + (1 - lambda) * feedbackTermScores.get(termid);
                 feedbackTermScores.put(termid, weight);
@@ -96,7 +100,6 @@ public class RM3 extends RM1 {
 
     @Override
     public List<ExpansionTerm> expand(Request srq) throws IOException {
-        this.originalQueryTermScores.clear();
         return super.expand(srq);
     }
 }
