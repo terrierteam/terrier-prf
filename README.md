@@ -42,8 +42,8 @@ bin/terrier br -w BM25 -c axqe:on -o ./bm25.axqe.res -P org.terrier:terrier-prf:
 
 ## Credits
 
-Craig Macdonald, University of Glasgow
-Nicola Tonellotto, University of Pisa
+- Craig Macdonald, University of Glasgow
+- Nicola Tonellotto, University of Pisa
 
 Thanks to Jeff Dalton and Jimmy Lin for useful discussions.
 
