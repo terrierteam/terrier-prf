@@ -11,6 +11,7 @@ import org.terrier.matching.MatchingQueryTerms.MatchingTerm;
 import org.terrier.matching.matchops.SingleTermOp;
 import org.terrier.querying.parser.Query.QTPBuilder;
 import org.terrier.structures.Index;
+import org.terrier.structures.LexiconEntry;
 
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatOpenHashMap;
@@ -71,9 +72,10 @@ public class RM3 extends RM1 {
                 .mapToDouble(Double::doubleValue).sum();
         for (MatchingTerm mt : mqt) {
 
-            int termid = super.index.getLexicon().getLexiconEntry(mt.getKey().toString()).getTermId();
-            if (termid == -1)
+            LexiconEntry le = super.index.getLexicon().getLexiconEntry(mt.getKey().toString());
+            if (le == null)
                 continue;
+            int termid = le.getTermId();
             float termCount = (float) mt.getValue().getWeight();
             originalQueryTermScores.put(termid, termCount / queryLength);
         }
