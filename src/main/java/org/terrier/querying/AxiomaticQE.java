@@ -39,7 +39,7 @@ import gnu.trove.TLongIntHashMap;
  * <ul>
  * <li>expansion.terms - number of terms to insert</li>
  * <li>expansion.documents - number of PRF documents to analyse</li>
- * <li>ax.beta< - weight of new terms/li>
+ * <li>ax.beta - weight of new terms</li>
  * <li>ax.K - number of terms related to each original query term to keep</li>
  * <li>ax.R - number of random non-relevant documents to analyse</li>
  * </ul>
@@ -62,7 +62,7 @@ public class AxiomaticQE extends QueryExpansion {
 	class AxiomaticExpansionTerms extends ExpansionTerms {
 
 		TIntHashSet seenDocids = new TIntHashSet();
-		TIntArrayList originalQTerms = new TIntArrayList();
+		TIntHashSet originalQTerms = new TIntHashSet();
 		Idf idfI = new Idf(index.getCollectionStatistics().getNumberOfDocuments());
 
 		TLongIntHashMap pairCount = new TLongIntHashMap();
@@ -91,7 +91,7 @@ public class AxiomaticQE extends QueryExpansion {
 
 			TIntDoubleHashMap allTerms = new TIntDoubleHashMap();
 
-			for (int originalQueryTerm : originalQTerms.toNativeArray()) {
+			for (int originalQueryTerm : originalQTerms.toArray()) {
 				Queue<Pair<Integer, Double>> newtermQueue = MinMaxPriorityQueue.orderedBy(pairComparator).maximumSize(K)
 						.create();
 
@@ -208,12 +208,18 @@ public class AxiomaticQE extends QueryExpansion {
 					for (int term2 : terms) {
 						if (term2 <= term1)
 							continue;
-						// use a long to encode both of the termids
-						pairCount.adjustOrPutValue((((long) term1) << 32) | (term2 & 0xffffffffL), 1, 1);
+						//we only count pairs that involve an original query term
+						if (this.originalQTerms.contains(term1) || this.originalQTerms.contains(term2))
+						{
+							// use a long to encode both of the termids
+							pairCount.adjustOrPutValue((((long) term1) << 32) | (term2 & 0xffffffffL), 1, 1);
+						}
 					}
 				}
 				ip.close();
 			}
+			if (singleCounts.size() > 0)
+				assert pairCount.size() > 0;
 			axlogger.info("Done: " + singleCounts.size() + " terms, " + pairCount.size() + " pairs");
 		}
 
