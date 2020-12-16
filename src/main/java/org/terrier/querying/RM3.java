@@ -61,7 +61,7 @@ public class RM3 extends RM1 {
                     .setWeight(et.getWeight()).build());
             sQuery.append(et.getText() + "^" + et.getWeight() + " ");
         }
-        logger.info("Reformulated query @ lambda="+this.lambda+": " + sQuery.toString());
+        logger.info("Reformulated query "+ mqt.getQueryId() +" @ lambda="+this.lambda+": " + sQuery.toString());
         //logger.info("Reformulated query: " + mqt.toString());
         return true;
     }
