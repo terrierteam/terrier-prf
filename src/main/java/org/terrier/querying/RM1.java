@@ -220,7 +220,7 @@ public class RM1 implements MQTRewritingProcess
 	{	
 		int numDocs = rs.getResultSize() < fbDocs ? rs.getResultSize() : fbDocs;
 		double norm = logSumExp(rs.getScores());
-		
+		logger.info("Analysing " + numDocs + " feedback	documents");
 		for (int i = 0; i < numDocs; ++i) {
 			FeedbackDocument doc = new FeedbackDocument(rs.getDocids()[i], Math.exp(rs.getScores()[i] - norm), index);
 			topDocs.add(doc);
