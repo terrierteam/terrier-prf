@@ -96,6 +96,9 @@ public class RM1 implements MQTRewritingProcess
 				if (le.getDocumentFrequency() >= MIN_DF && le.getDocumentFrequency() < MAX_DOC_FREQ)
 					this.terms.put(dp.getId(), dp.getFrequency());
 			}
+			if (this.length > 0 && this.terms.size() == 0) {
+				logger.warn("Did not identify any usable candidate expansion terms from docid " + docid);
+			}
 			dp.close();
 			
 			//this.length = index.getDocumentIndex().getDocumentLength(docid);
@@ -220,12 +223,13 @@ public class RM1 implements MQTRewritingProcess
 	{	
 		int numDocs = rs.getResultSize() < fbDocs ? rs.getResultSize() : fbDocs;
 		double norm = logSumExp(rs.getScores());
-		logger.info("Analysing " + numDocs + " feedback	documents");
+		logger.info("Analysing " + numDocs + " feedback documents");
 		for (int i = 0; i < numDocs; ++i) {
 			FeedbackDocument doc = new FeedbackDocument(rs.getDocids()[i], Math.exp(rs.getScores()[i] - norm), index);
 			topDocs.add(doc);
 			topLexicon.addAll(doc.getTermIds());			
 		}
+		logger.info("Found " + topLexicon.size() + " terms after feedback document analysis");
 	}
 
 	/**
