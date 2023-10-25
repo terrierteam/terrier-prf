@@ -97,7 +97,7 @@ public class RM1 implements MQTRewritingProcess
 					this.terms.put(dp.getId(), dp.getFrequency());
 			}
 			if (this.length > 0 && this.terms.size() == 0) {
-				logger.warn("Did not identify any usable candidate expansion terms from docid " + docid);
+				logger.warn("Did not identify any usable candidate expansion terms from docid " + docid + " among " + this.length + " possibilities");
 			}
 			dp.close();
 			
@@ -221,15 +221,18 @@ public class RM1 implements MQTRewritingProcess
 	 */
 	protected void retrieveTopDocuments(final ResultSet rs) throws IOException 
 	{	
-		int numDocs = rs.getResultSize() < fbDocs ? rs.getResultSize() : fbDocs;
-		double norm = logSumExp(rs.getScores());
-		logger.info("Analysing " + numDocs + " feedback documents");
+		final int numDocs = rs.getResultSize() < fbDocs ? rs.getResultSize() : fbDocs;
+		final double norm = logSumExp(rs.getScores());
 		for (int i = 0; i < numDocs; ++i) {
 			FeedbackDocument doc = new FeedbackDocument(rs.getDocids()[i], Math.exp(rs.getScores()[i] - norm), index);
 			topDocs.add(doc);
 			topLexicon.addAll(doc.getTermIds());			
 		}
-		logger.info("Found " + topLexicon.size() + " terms after feedback document analysis");
+		if (topLexicon.size() > 0) {
+			logger.info("Found " + topLexicon.size() + " terms after feedback document analysis");
+		} else {
+			logger.warn("Did not find any useful candidate expansion terms after analysis of "+ numDocs + " feedback documents");
+		}
 	}
 
 	/**
