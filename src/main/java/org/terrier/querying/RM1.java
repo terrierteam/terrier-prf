@@ -3,7 +3,6 @@ package org.terrier.querying;
 import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -256,13 +255,16 @@ public class RM1 implements MQTRewritingProcess
 		feedbackTermScores = feedbackTermScores
 			.int2FloatEntrySet()
 			.stream()
-			.sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+			.sorted(
+				Map.Entry.<Integer,Float>comparingByValue().reversed() // sort by descending weight
+				.thenComparing(Map.Entry.comparingByKey()) // tie-break by ascending termid
+			 	)
 			.limit(fbTerms)
 			.collect(toMap(Map.Entry::getKey, 
 						   Map.Entry::getValue, 
 						   (e1, e2) -> e2, 
 						   Int2FloatOpenHashMap::new)
-			);		
+			);
 	}
 	
 	/**
