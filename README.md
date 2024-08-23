@@ -40,6 +40,9 @@ bin/terrier br -w BM25 -c axqe:on -o ./bm25.axqe.res -P org.terrier:terrier-prf
 AxiomaticQE can be used in PyTerrier.
 
 ```python
+import pyterrier as pt
+pt.java.add_package('com.github.terrierteam', 'terrier-prf', '-SNAPSHOT')
+
 from pyterrier.terrier.rewrite import QueryExpansion
 @pt.java.required
 class AxiomaticQE(QueryExpansion):
